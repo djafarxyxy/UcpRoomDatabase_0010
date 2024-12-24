@@ -169,3 +169,83 @@ fun FormDokter(
     }
 }
 
+@Composable
+fun InsertBodyDokter(
+    modifier: Modifier = Modifier,
+    onValueChange: (DokterEvent) -> Unit,
+    uiState: DokterUiState,
+    onClick: () -> Unit
+){
+    Column  (
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        FormDokter(
+            doketerEvent = uiState.dokterEvent,
+            onValueChange = onValueChange,
+            errorState = uiState.isEntryValid,
+            modifier = modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = onClick,
+            modifier = modifier.fillMaxWidth()
+        ){
+            Text(text = "Simpan")
+        }
+    }
+}
+
+object DestinasiInsertDokter : AlamatNavigasi {
+    override val route = "Insert_Dokter"
+}
+
+@Composable
+fun InsertDokterView(
+    onBack: () -> Unit,
+    onNavigate: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DokterViewModel = viewModel(factory = PenyediaViewModel.factory)
+){
+    val uiState = viewModel.uiState
+    val snackBarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(uiState.snackBarMessage) {
+        uiState.snackBarMessage?.let { message ->
+            coroutineScope.launch {
+                snackBarHostState.showSnackbar(message)
+                viewModel.resetSnackBarMessage()
+            }
+        }
+    }
+    Scaffold (
+        modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
+
+    ){padding ->
+        Column (
+            modifier = modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ){
+            TopAppBar(
+                onBack = onBack,
+                showBackButton = true,
+                judul = "Tambah Dokter"
+            )
+            InsertBodyDokter(
+                uiState = uiState,
+                onValueChange = {updateEvent ->
+                    viewModel.updateState(updateEvent)
+                },onClick = {
+                    coroutineScope.launch {
+                        viewModel.saveData()
+                    }
+                    onNavigate()
+                }
+            )
+        }
+    }
+}
