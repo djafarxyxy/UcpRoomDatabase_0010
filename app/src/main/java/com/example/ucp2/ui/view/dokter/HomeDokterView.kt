@@ -135,3 +135,221 @@ fun CardDokter(
     }
 }
 
+@Composable
+fun ListDokter(
+    listDktr: List<Dokter>,
+    modifier: Modifier = Modifier,
+    onClick: (String) -> Unit = { }
+) {
+    LazyColumn(
+        modifier = modifier
+    ) {
+        items(
+            items = listDktr,
+            itemContent = { Dokter ->
+                CardDokter(
+                    Dokter = Dokter,
+                    onClick = { onClick(Dokter.id) },
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+        )
+    }
+}
+
+@Composable
+fun BodyHomeDokterView(
+    homeDokterUiState: HomeDokterUiState,
+    modifier: Modifier = Modifier,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val snackBarHostState = remember { SnackbarHostState() }
+    when {
+        homeDokterUiState.isLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        homeDokterUiState.isError -> {
+            LaunchedEffect(homeDokterUiState.errorMessages) {
+                homeDokterUiState.errorMessages?.let { message ->
+                    coroutineScope.launch {
+                        snackBarHostState.showSnackbar(message)
+                    }
+                }
+            }
+        }
+
+        homeDokterUiState.listDokter.isEmpty() -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Tidak Ada Data Dokter",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
+        else -> {
+            ListDokter(
+                listDktr = homeDokterUiState.listDokter,
+                modifier = modifier
+            )
+        }
+    }
+}
+
+@Composable
+fun HomeDokterView(
+    viewModel: HomeDokterViewModel = viewModel(factory = PenyediaViewModel.factory),
+    onAddDokter: () -> Unit = { },
+    onAddJadwal: () -> Unit = { },
+    modifier: Modifier = Modifier
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF1E88E5),
+                                    Color(0xFF64B5F6)
+                                )
+                            )
+                        )
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.jett),
+                            contentDescription = "Header Image",
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(CircleShape)
+                                .border(3.dp, Color.White, CircleShape)
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = "Healty Jasmani Rohani",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        val homeDokterUiState by viewModel.HomeDokterUiState.collectAsState()
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .clickable { onAddDokter() }
+                        .shadow(6.dp, shape = RoundedCornerShape(12.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF4CAF50), Color(0xFF81C784))
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Add Doctor",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .clickable { onAddJadwal() }
+                        .shadow(6.dp, shape = RoundedCornerShape(12.dp))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color(0xFFFF7043), Color(0xFFFFAB91))
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Schedule",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .shadow(6.dp, RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF1F8E9), RoundedCornerShape(12.dp))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Daftar Dokter",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF388E3C)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            BodyHomeDokterView(
+                homeDokterUiState = homeDokterUiState,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
